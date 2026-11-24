@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 import { getExpenses, getMonthSummary, getTopCategory } from "@/lib/expenses";
 import { SummaryCards } from "@/components/summary-cards";
 import { Section } from "@/components/section";
@@ -7,6 +9,9 @@ import { ExpenseTable } from "@/components/expense-table";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
   const [expenses, summary, topCategory] = await Promise.all([
     getExpenses(),
     getMonthSummary(),
