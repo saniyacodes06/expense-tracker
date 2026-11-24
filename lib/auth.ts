@@ -1,6 +1,9 @@
 import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import type { NextResponse } from "next/server";
 import { queryOne, query } from "@/lib/db";
+import { forbidden, unauthorized } from "@/lib/api";
 
 export const SESSION_COOKIE = "session";
 const SESSION_DAYS = 7;
@@ -58,4 +61,24 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
        AND u.is_active = TRUE`,
         [token]
     );
+}
+
+type AdminCheck =
+    | { admin: CurrentUser; error: null }
+    | { admin: null; error: NextResponse };
+
+// for admin API routes: 401 if not logged in, 403 if logged in but not ADMIN
+export async function requireAdmin(): Promise<AdminCheck> {
+    const user = await getCurrentUser();
+    if (!user) return { admin: null, error: unauthorized() };
+    if (user.role !== "ADMIN") return { admin: null, error: forbidden() };
+    return { admin: user, error: null };
+}
+
+// for admin pages: send non-admins away instead of showing the page
+export async function requireAdminPage(): Promise<CurrentUser> {
+    const user = await getCurrentUser();
+    if (!user) redirect("/login");
+    if (user.role !== "ADMIN") redirect("/");
+    return user;
 }
