@@ -30,3 +30,8 @@ export const signupSchema = z.object({
     .min(8, "Password must be at least 8 characters")
     .max(72, "Password is too long"),
 });
+// login: we only check that something was sent. No hints about what was wrong.
+export const loginSchema = z.object({
+  email: z.string().trim().toLowerCase().max(254),
+  password: z.string().min(1).max(72),
+});
