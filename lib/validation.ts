@@ -14,3 +14,19 @@ export function parseExpenseForm(formData: FormData) {
     category: formData.get("category"),
   });
 }
+
+// signup: what we accept from the browser. Anything else (like "role") is dropped.
+export const signupSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(254, "Email is too long")
+    .pipe(z.email("Enter a valid email")),
+  // bcrypt only uses the first 72 bytes, so we cap it there
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(72, "Password is too long"),
+});
