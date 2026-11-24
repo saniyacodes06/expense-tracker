@@ -13,9 +13,9 @@ export default async function HomePage() {
   if (!user) redirect("/login");
 
   const [expenses, summary, topCategory] = await Promise.all([
-    getExpenses(),
-    getMonthSummary(),
-    getTopCategory(),
+    getExpenses(user.id),
+    getMonthSummary(user.id),
+    getTopCategory(user.id),
   ]);
 
   return (
