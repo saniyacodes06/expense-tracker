@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { LogoutButton } from "@/components/logout-button";
 import "./globals.css";
@@ -19,6 +20,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <h1 className="text-xl font-bold">Expense Tracker</h1>
             {user && (
               <div className="flex items-center gap-3 text-sm">
+                {/* only a shortcut: the admin pages and APIs check the role themselves */}
+                {user.role === "ADMIN" && (
+                  <nav className="flex gap-3">
+                    <Link href="/" className="hover:underline">
+                      My expenses
+                    </Link>
+                    <Link href="/admin" className="hover:underline">
+                      Admin
+                    </Link>
+                    <Link href="/admin/users" className="hover:underline">
+                      Users
+                    </Link>
+                    <Link href="/admin/expenses" className="hover:underline">
+                      All expenses
+                    </Link>
+                  </nav>
+                )}
                 <span>{user.name}</span>
                 <LogoutButton />
               </div>
