@@ -101,3 +101,78 @@ export function getUser(id: number) {
         [id]
     );
 }
+
+export type AdminExpense = {
+    id: number;
+    title: string;
+    amount: string;
+    category: string;
+    created_at: string;
+    user_id: number;
+    user_email: string;
+};
+
+export type ExpenseFilters = {
+    user?: string; // part of the owner's email
+    category?: string;
+    from?: string; // YYYY-MM-DD
+    to?: string; // YYYY-MM-DD, whole day included
+};
+
+export async function listExpenses(filters: ExpenseFilters, page: number) {
+    // build WHERE from the filters that were sent; values always go as $1, $2...
+    const where: string[] = [];
+    const values: unknown[] = [];
+
+    if (filters.user) {
+        values.push(`%${filters.user}%`);
+        where.push(`u.email ILIKE $${values.length}`);
+    }
+    if (filters.category) {
+        values.push(filters.category);
+        where.push(`e.category = $${values.length}`);
+    }
+    if (filters.from) {
+        values.push(filters.from);
+        where.push(`e.created_at >= $${values.length}::date`);
+    }
+    if (filters.to) {
+        values.push(filters.to);
+        where.push(`e.created_at < $${values.length}::date + 1`);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+    const offset = (page - 1) * PAGE_SIZE;
+
+    const [expenses, countRow] = await Promise.all([
+        query<AdminExpense>(
+            `SELECT e.id, e.title, e.amount, e.category, e.created_at,
+                    e.user_id, u.email AS user_email
+             FROM expenses e
+             JOIN users u ON u.id = e.user_id
+             ${whereSql}
+             ORDER BY e.created_at DESC
+             LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+            [...values, PAGE_SIZE, offset]
+        ),
+        queryOne<{ total: string }>(
+            `SELECT COUNT(*) AS total
+             FROM expenses e
+             JOIN users u ON u.id = e.user_id
+             ${whereSql}`,
+            values
+        ),
+    ]);
+
+    const total = Number(countRow?.total ?? 0);
+    return { expenses, total, page, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
+}
+
+// admin can delete any expense; returns false if it did not exist
+export async function deleteAnyExpense(id: number) {
+    const row = await queryOne<{ id: number }>(
+        "DELETE FROM expenses WHERE id = $1 RETURNING id",
+        [id]
+    );
+    return row !== null;
+}

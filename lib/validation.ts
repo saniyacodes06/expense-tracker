@@ -42,3 +42,10 @@ export const adminUserUpdateSchema = z
     isActive: z.boolean().optional(),
   })
   .refine((d) => d.role !== undefined || d.isActive !== undefined, "Nothing to update");
+// admin expense filters from the URL. Empty fields are left out before parsing.
+export const adminExpenseFiltersSchema = z.object({
+  user: z.string().trim().max(100).optional(),
+  category: z.enum(CATEGORIES).optional(),
+  from: z.iso.date("From must be a date").optional(),
+  to: z.iso.date("To must be a date").optional(),
+});
