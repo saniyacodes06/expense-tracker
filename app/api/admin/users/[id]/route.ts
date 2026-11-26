@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
-import { updateUser } from "@/lib/admin";
+import { getUser, updateUser } from "@/lib/admin";
+import { getExpenses } from "@/lib/expenses";
 import { adminUserUpdateSchema } from "@/lib/validation";
 import { badRequest, notFound, parseId, serverError } from "@/lib/api";
 
@@ -28,5 +29,24 @@ export async function PATCH(request: Request, { params }: Context) {
         return user ? NextResponse.json(user) : notFound("User not found");
     } catch (err) {
         return serverError("PATCH /api/admin/users/[id]", err);
+    }
+}
+
+// GET /api/admin/users/3 -> user details + their expenses (read only)
+export async function GET(_request: Request, { params }: Context) {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
+    const id = parseId((await params).id);
+    if (!id) return notFound("User not found");
+
+    try {
+        const user = await getUser(id);
+        if (!user) return notFound("User not found");
+
+        const expenses = await getExpenses(id);
+        return NextResponse.json({ user, expenses });
+    } catch (err) {
+        return serverError("GET /api/admin/users/[id]", err);
     }
 }

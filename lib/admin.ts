@@ -95,3 +95,9 @@ export async function updateUser(
     }
     return user;
 }
+export function getUser(id: number) {
+    return queryOne<Omit<AdminUser, "expense_count">>(
+        "SELECT id, name, email, role, is_active, created_at FROM users WHERE id = $1",
+        [id]
+    );
+}
