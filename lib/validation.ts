@@ -35,3 +35,10 @@ export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().max(254),
   password: z.string().min(1).max(72),
 });
+// admin: change a user's role and/or active status
+export const adminUserUpdateSchema = z
+  .object({
+    role: z.enum(["USER", "ADMIN"]).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((d) => d.role !== undefined || d.isActive !== undefined, "Nothing to update");

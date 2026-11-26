@@ -76,3 +76,22 @@ export async function listUsers(search: string, page: number) {
     const total = Number(countRow?.total ?? 0);
     return { users, total, page, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
 }
+export async function updateUser(
+    id: number,
+    changes: { role?: "USER" | "ADMIN"; isActive?: boolean }
+) {
+    const user = await queryOne<Omit<AdminUser, "expense_count">>(
+        `UPDATE users
+     SET role = COALESCE($2, role),
+         is_active = COALESCE($3, is_active)
+     WHERE id = $1
+     RETURNING id, name, email, role, is_active, created_at`,
+        [id, changes.role ?? null, changes.isActive ?? null]
+    );
+
+    // deactivated: end all their sessions right now
+    if (user && changes.isActive === false) {
+        await query("DELETE FROM sessions WHERE user_id = $1", [id]);
+    }
+    return user;
+}
