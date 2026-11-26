@@ -37,7 +37,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     </Link>
                   </nav>
                 )}
-                <span>{user.name}</span>
+                <Link href="/profile" className="hover:underline">
+                  {user.name}
+                </Link>
                 <LogoutButton />
               </div>
             )}

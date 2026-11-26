@@ -1,5 +1,6 @@
 //Database se statistics calculate karta hai..//
 import { query, queryOne } from "@/lib/db";
+import { lastFourDigits } from "@/lib/crypto";
 
 /*adminstats- tells o/p return type. string becaude pg gives count n sum in strng format"4".*/
 
@@ -50,14 +51,23 @@ export type AdminUser = {
     is_active: boolean;
     created_at: string;
     expense_count: string;
+    phone_last4: string | null; // "••••3210": the admin never sees the full number
 };
+
+type UserRow = Omit<AdminUser, "phone_last4"> & { phone_encrypted: string | null };
+
+// swap the encrypted phone for its last 4 digits before anything leaves the server
+function withPhoneLast4<T extends { phone_encrypted: string | null }>({ phone_encrypted, ...rest }: T) {
+    return { ...rest, phone_last4: lastFourDigits(phone_encrypted) };
+}
+
 export async function listUsers(search: string, page: number) {
     const pattern = `%${search}%`;
     const offset = (page - 1) * PAGE_SIZE;
 
-    const [users, countRow] = await Promise.all([
-        query<AdminUser>(
-            `SELECT u.id, u.name, u.email, u.role, u.is_active, u.created_at,
+    const [rows, countRow] = await Promise.all([
+        query<UserRow>(
+            `SELECT u.id, u.name, u.email, u.role, u.is_active, u.created_at, u.phone_encrypted,
               COUNT(e.id) AS expense_count
        FROM users u
        LEFT JOIN expenses e ON e.user_id = u.id
@@ -73,6 +83,7 @@ export async function listUsers(search: string, page: number) {
         ),
     ]);
 
+    const users = rows.map(withPhoneLast4);
     const total = Number(countRow?.total ?? 0);
     return { users, total, page, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
 }
@@ -80,7 +91,7 @@ export async function updateUser(
     id: number,
     changes: { role?: "USER" | "ADMIN"; isActive?: boolean }
 ) {
-    const user = await queryOne<Omit<AdminUser, "expense_count">>(
+    const user = await queryOne<Omit<AdminUser, "expense_count" | "phone_last4">>(
         `UPDATE users
      SET role = COALESCE($2, role),
          is_active = COALESCE($3, is_active)
@@ -95,11 +106,12 @@ export async function updateUser(
     }
     return user;
 }
-export function getUser(id: number) {
-    return queryOne<Omit<AdminUser, "expense_count">>(
-        "SELECT id, name, email, role, is_active, created_at FROM users WHERE id = $1",
+export async function getUser(id: number) {
+    const row = await queryOne<Omit<UserRow, "expense_count">>(
+        "SELECT id, name, email, role, is_active, created_at, phone_encrypted FROM users WHERE id = $1",
         [id]
     );
+    return row ? withPhoneLast4(row) : null;
 }
 
 export type AdminExpense = {

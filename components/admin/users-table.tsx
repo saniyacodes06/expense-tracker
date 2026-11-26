@@ -77,6 +77,7 @@ export function UsersTable({ currentAdminId }: { currentAdminId: number }) {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Joined</TableHead>
@@ -95,6 +96,7 @@ export function UsersTable({ currentAdminId }: { currentAdminId: number }) {
                     </Link>
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.phone_last4 ?? "—"}</TableCell>
                   <TableCell>{user.role}</TableCell>
                   <TableCell>{user.is_active ? "Active" : "Deactivated"}</TableCell>
                   <TableCell>{formatDate(user.created_at)}</TableCell>

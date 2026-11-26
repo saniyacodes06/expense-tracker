@@ -49,3 +49,13 @@ export const adminExpenseFiltersSchema = z.object({
   from: z.iso.date("From must be a date").optional(),
   to: z.iso.date("To must be a date").optional(),
 });
+
+// profile: phone number. "" clears it. Spaces and dashes are removed before saving.
+export const profileSchema = z.object({
+  phone: z
+    .string()
+    .trim()
+    .max(20, "Phone number is too long")
+    .transform((v) => v.replace(/[\s-]/g, ""))
+    .refine((v) => v === "" || /^\+?\d{10,15}$/.test(v), "Enter a valid phone number (10 to 15 digits)"),
+});

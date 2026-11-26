@@ -41,6 +41,8 @@ export function UserDetail({ id }: { id: string }) {
         <dl className="grid grid-cols-2 gap-2 text-sm">
           <dt className="text-muted-foreground">Email</dt>
           <dd>{user.email}</dd>
+          <dt className="text-muted-foreground">Phone</dt>
+          <dd>{user.phone_last4 ?? "—"}</dd>
           <dt className="text-muted-foreground">Role</dt>
           <dd>{user.role}</dd>
           <dt className="text-muted-foreground">Status</dt>
